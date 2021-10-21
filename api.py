@@ -114,10 +114,10 @@ def login():
             resp.status_code = 200
             return resp
         else:
-            resp = jsonify("password incorrect")
+            resp = jsonify("Password incorrect!")
             return resp
     else:
-        resp = jsonify("user not found")
+        resp = jsonify("User not found!")
         return resp
 
 
