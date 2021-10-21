@@ -2,11 +2,12 @@ from flask_pymongo import PyMongo
 from bson.json_util import dumps
 from bson.objectid import ObjectId
 from flask import Flask, json, jsonify, request
-from werkzeug.security import generate_password_hash
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 #TODO: properly write the docstrings for every functions.
-
+#TODO: create registration checking system for email address
+#TODO: create login system for logging in with tokens 
 
 app.config['MONGO_URI'] = 'mongodb+srv://test:test@cluster0.x25kn.mongodb.net/demo_db?retryWrites=true&w=majority'
 mongo = PyMongo(app)
@@ -96,5 +97,30 @@ def update_user(id):
 
         return resp
 
+@app.route('/login', methods=['POST'])
+def login():
+    """
+        User login
+    """
+    _json = request.json
+    _email = _json['email']
+    _password = _json['pwd']
+
+    login_user = db_operations.find_one({'email':_email})
+
+    if login_user:
+        if check_password_hash(login_user['pwd'],_password):
+            resp = jsonify("User logged in successfully.")
+            resp.status_code = 200
+            return resp
+        else:
+            resp = jsonify("password incorrect")
+            return resp
+    else:
+        resp = jsonify("user not found")
+        return resp
+
+
 if __name__ == "__main__":
     app.run(debug=True)
+
