@@ -13,21 +13,26 @@ app.config['MONGO_URI'] = 'mongodb+srv://test:test@cluster0.x25kn.mongodb.net/de
 mongo = PyMongo(app)
 db_operations = mongo.db.demo
 
-@app.route('/add',methods=['POST'])
-def add_user():
+@app.route('/register',methods=['POST'])
+def register_user():
     """
        Users information are added.
     """
+    address = dict()
     _json = request.json
     _name = _json['name']
+    address['province'] = _json['province']
+    address['district'] = _json['district']
+    address['town'] = _json['town']
+    _gender = _json['gender']
     _email = _json['email']
-    _password = _json['pwd']
+    _password = _json['password']
 
-    if _name and _email and _password and request.method=='POST':
+    if _name and _email and _password and address and _gender and request.method=='POST':
 
         _hashed_password = generate_password_hash(_password)
 
-        id = db_operations.insert({'name':_name,'email':_email,'pwd':_hashed_password})
+        id = db_operations.insert({'name':_name,'address': address,'email':_email,'pwd':_hashed_password})
 
         resp = jsonify('User added successfully.')
 
@@ -120,6 +125,9 @@ def login():
         resp = jsonify("User not found!")
         return resp
 
+@app.route('/logout')
+def logout():
+    pass
 
 if __name__ == "__main__":
     app.run(debug=True)
