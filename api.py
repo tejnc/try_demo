@@ -1,15 +1,18 @@
-from logging import currentframe
 import os
 import jwt
 import time
 import datetime
 from dotenv import load_dotenv
+from logging import currentframe
 from flask_pymongo import PyMongo
 from bson.json_util import dumps
 from bson.objectid import ObjectId
-from flask import Flask, json, jsonify, request
-from werkzeug.security import generate_password_hash, check_password_hash
+from pymongo import mongo_client
+from pymongo.message import query
 from utils.user import get_user_by_id
+from flask import Flask, json, jsonify, request
+from mongonator import MongoClientWithPagination, ASCENDING
+from werkzeug.security import generate_password_hash, check_password_hash
 
 
 app = Flask(__name__)
@@ -26,6 +29,9 @@ app.config['MONGO_URI'] = os.environ['URI']
 mongo = PyMongo(app)
 db_operations = mongo.db.demo
 
+mongo_client = MongoClientWithPagination(os.environ['URI'])
+db =mongo_client['demo_db']
+col = db['demo']
 
 @app.route('/register',methods=['POST'])
 def register_user():
@@ -70,11 +76,15 @@ def users():
     """ Show the list of users. """
     current_time = time.time()
     exp_time = get_user_by_id(request.headers)['exp']
-    
+    query_filter = {'name':{'$ne':None}}
+
     if exp_time > current_time:
-        users = db_operations.find()
-        resp = dumps(users)
-        return resp
+        # users = db_operations.find()
+        # resp = dumps(users)
+        # return resp
+        for d in col.paginate(query=query_filter, limit=5, projection={'name':1,'email':1,'address':1,'gender':1},ordering_field='name', ordering=ASCENDING):
+            users = dumps(d.response)
+            return users
 
     else:
         return jsonify("token expired")
@@ -108,7 +118,7 @@ def update_user(id):
     _json = request.json
     _name = _json['name']
     _email = _json['email']
-    _password = _json['pwd']
+    _password = _json['password']
 
     if _id and _name and _email and _password and request.method=="PUT":
         _hashed_password = generate_password_hash(_password)       
